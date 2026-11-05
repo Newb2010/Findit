@@ -300,8 +300,12 @@ img {
 
 .stats-section {
   display: block;
-  width: 100%;
+
+  width: min(1400px, calc(100% - 80px));
+  margin: 0 auto;
+
   padding: 65px 0;
+  box-sizing: border-box;
 }
 
 /* Heading */
