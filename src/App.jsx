@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 
 import Navbar from "./components/Navbar";
@@ -12,6 +13,7 @@ import ItemDetailModal from "./components/itemDetailModal";
 import "./App.css";
 
 const STORAGE_KEY = "findit_items";
+const THEME_KEY = "findit_theme";
 
 const initialItems = [
   {
@@ -22,7 +24,8 @@ const initialItems = [
     category: "Bags",
     location: "School Area",
     date: "30 Oct 2026",
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600",
+    image:
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600",
     phone: "",
   },
   {
@@ -33,7 +36,8 @@ const initialItems = [
     category: "Accessories",
     location: "Library",
     date: "29 Oct 2026",
-    image: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600",
+    image:
+      "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600",
     phone: "",
   },
   {
@@ -44,7 +48,8 @@ const initialItems = [
     category: "Electronics",
     location: "Classroom",
     date: "28 Oct 2026",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600",
+    image:
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600",
     phone: "",
   },
   {
@@ -55,7 +60,8 @@ const initialItems = [
     category: "Accessories",
     location: "Sports Hall",
     date: "27 Oct 2026",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600",
+    image:
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600",
     phone: "",
   },
 ];
@@ -67,10 +73,21 @@ function getSavedItems() {
     if (saved === null) return initialItems;
 
     const parsed = JSON.parse(saved);
+
     return Array.isArray(parsed) ? parsed : initialItems;
   } catch (error) {
     console.error("Failed to load Findit data:", error);
     return initialItems;
+  }
+}
+
+function getSavedTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+
+    return saved === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
   }
 }
 
@@ -79,13 +96,15 @@ function App() {
   const [showReport, setShowReport] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+
   const [items, setItems] = useState(getSavedItems);
+  const [theme, setTheme] = useState(getSavedTheme);
 
   const handleLoadingComplete = useCallback(() => {
     setIsLoading(false);
   }, []);
 
-  // Simpan perubahan data ke localStorage
+  // Simpan data barang
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -95,16 +114,36 @@ function App() {
     }
   }, [items]);
 
-  // Animasi section saat masuk ke viewport
+  // Terapkan tema
   useEffect(() => {
-    const elements = document.querySelectorAll(
-      ".hero, .stats-section, .items-section, .footer"
-    );
+    document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
+
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (error) {
+      console.error("Failed to save theme:", error);
+    }
+  }, [theme]);
+
+  // Animasi section saat scroll naik dan turun
+  useEffect(() => {
+    if (isLoading) return;
+
+    const selectors = [
+      ".hero",
+      ".stats-section",
+      ".items-section",
+      ".footer",
+    ];
+
+    const elements = document.querySelectorAll(selectors.join(", "));
 
     if (!("IntersectionObserver" in window)) {
       elements.forEach((element) => {
         element.classList.add("is-visible");
       });
+
       return;
     }
 
@@ -113,7 +152,8 @@ function App() {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
+          } else {
+            entry.target.classList.remove("is-visible");
           }
         });
       },
@@ -128,21 +168,34 @@ function App() {
       observer.observe(element);
     });
 
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      observer.disconnect();
 
-  // Tambah laporan baru
+      elements.forEach((element) => {
+        element.classList.remove(
+          "is-visible",
+          "reveal-section"
+        );
+      });
+    };
+  }, [isLoading]);
+
+  // Tambah barang
   function handleAddItem(newItem) {
     const itemWithId = {
       ...newItem,
       id: Date.now(),
     };
 
-    setItems((previousItems) => [itemWithId, ...previousItems]);
+    setItems((previousItems) => [
+      itemWithId,
+      ...previousItems,
+    ]);
+
     setShowReport(false);
   }
 
-  // Perbarui laporan
+  // Update barang
   function handleUpdateItem(updatedItem) {
     setItems((previousItems) =>
       previousItems.map((item) =>
@@ -153,7 +206,7 @@ function App() {
     setEditingItem(null);
   }
 
-  // Hapus laporan
+  // Hapus barang
   function handleDeleteItem(itemId) {
     setItems((previousItems) =>
       previousItems.filter((item) => item.id !== itemId)
@@ -162,15 +215,23 @@ function App() {
     setSelectedItem(null);
   }
 
-  // Buka form edit
+  // Edit barang
   function handleEditItem(item) {
     setSelectedItem(null);
     setEditingItem(item);
   }
 
+  // Tutup modal
   function closeReportModal() {
     setShowReport(false);
     setEditingItem(null);
+  }
+
+  // Ganti tema
+  function handleToggleTheme() {
+    setTheme((current) =>
+      current === "light" ? "dark" : "light"
+    );
   }
 
   return (
@@ -179,8 +240,16 @@ function App() {
         <LoadingIntro onComplete={handleLoadingComplete} />
       )}
 
-      <div className="app">
-        <Navbar onReportClick={() => setShowReport(true)} />
+      <div
+        className={`app ${
+          isLoading ? "app-hidden" : "app-enter"
+        }`}
+      >
+        <Navbar
+          onReportClick={() => setShowReport(true)}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+        />
 
         <Hero
           onReportClick={() => setShowReport(true)}
@@ -191,7 +260,7 @@ function App() {
           }}
         />
 
-        <Stats />
+        <Stats items={items} />
 
         <ItemSection
           items={items}
@@ -205,7 +274,9 @@ function App() {
         <ReportModal
           initialItem={editingItem}
           onClose={closeReportModal}
-          onSubmit={editingItem ? handleUpdateItem : handleAddItem}
+          onSubmit={
+            editingItem ? handleUpdateItem : handleAddItem
+          }
         />
       )}
 

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 
 import {
@@ -24,7 +23,6 @@ function ItemDetailModal({
   if (!item) return null;
 
   function handleConfirmDelete() {
-    // Hanya dipanggil ketika tombol Delete dikonfirmasi.
     onDelete(item.id);
   }
 
@@ -74,10 +72,7 @@ function ItemDetailModal({
 
           {item.image && (
             <div className="detail-image">
-              <img
-                src={item.image}
-                alt={item.name}
-              />
+              <img src={item.image} alt={item.name} />
             </div>
           )}
 

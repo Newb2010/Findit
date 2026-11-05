@@ -1,12 +1,22 @@
-import { ArrowUpRight, Search } from "lucide-react";
+
+import { ArrowUpRight, Search, MoveDownRight } from "lucide-react";
 
 function Hero({ onReportClick, onExploreClick }) {
   return (
     <section className="hero" id="home">
       <div className="hero-content">
 
+        <div className="hero-meta">
+          <span className="hero-index">NO. 001 — FINDIT</span>
+          <span className="hero-status">
+            <span className="status-indicator" />
+            COMMUNITY PLATFORM
+          </span>
+        </div>
+
         <p className="eyebrow">
           LOST & FOUND PLATFORM
+          <span className="eyebrow-line" />
         </p>
 
         <h1>
@@ -23,23 +33,49 @@ function Hero({ onReportClick, onExploreClick }) {
 
         <div className="hero-actions">
 
-          <a href="#report" className="button-primary" onClick={onReportClick}>
+          <button
+            type="button"
+            className="button-primary"
+            onClick={onReportClick}
+          >
             Report an item
             <ArrowUpRight size={18} />
-          </a>
+          </button>
 
-          <a href="#items" className="button-secondary" onClick={onExploreClick}>
+          <button
+            type="button"
+            className="button-secondary"
+            onClick={onExploreClick}
+          >
             <Search size={17} />
             Explore items
-          </a>
+          </button>
 
+        </div>
+
+        <div className="hero-bottom-meta">
+          <span>
+            <MoveDownRight size={15} />
+            START EXPLORING
+          </span>
+
+          <span>BUILT FOR THE COMMUNITY</span>
         </div>
 
       </div>
 
       <div className="hero-note">
-        <span>01 / 03</span>
-        <p>Helping lost items find their way home.</p>
+        <span className="hero-note-number">01 / 03</span>
+
+        <div className="hero-note-content">
+          <span className="hero-note-label">OUR PURPOSE</span>
+          <p>Helping lost items find their way home.</p>
+        </div>
+      </div>
+
+      <div className="hero-decoration" aria-hidden="true">
+        <span>F</span>
+        <span>.</span>
       </div>
 
     </section>

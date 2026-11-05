@@ -1,4 +1,6 @@
+
 import { useEffect, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 import "./LoadingIntro.css";
 
 function LoadingIntro({ onComplete }) {
@@ -6,8 +8,6 @@ function LoadingIntro({ onComplete }) {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    let exitTimer;
-
     const duration = 2200;
     const intervalTime = 20;
     const increment = 100 / (duration / intervalTime);
@@ -18,35 +18,53 @@ function LoadingIntro({ onComplete }) {
 
         if (next >= 100) {
           clearInterval(timer);
-
-          setIsExiting(true);
-
-          exitTimer = setTimeout(() => {
-            onComplete();
-          }, 550);
         }
 
         return next;
       });
     }, intervalTime);
 
-    return () => {
-      clearInterval(timer);
-      clearTimeout(exitTimer);
-    };
-  }, [onComplete]);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (progress < 100) return;
+
+    setIsExiting(true);
+
+    const completionTimer = setTimeout(() => {
+      onComplete?.();
+    }, 750);
+
+    return () => clearTimeout(completionTimer);
+  }, [progress, onComplete]);
 
   return (
-    <div className={`loading-intro ${isExiting ? "loading-exit" : ""}`}>
-      <div className="loading-content">
-        <div className="loading-brand">
-          <h1 className="loading-logo">
-            findit<span>.</span>
-          </h1>
+    <div className={`loading-intro ${isExiting ? "is-exiting" : ""}`}>
+      <div className="loading-grain" />
 
-          <p className="loading-caption">
-            FINDING WHAT MATTERS
-          </p>
+      <div className="loading-top">
+        <span>F / 001</span>
+        <span>LOST & FOUND PLATFORM</span>
+      </div>
+
+      <div className="loading-content">
+        <div className="loading-mark">
+          <span>F</span>
+          <i />
+        </div>
+
+        <p className="loading-kicker">
+          A PLACE FOR EVERY LOST THING
+        </p>
+
+        <h1 className="loading-logo">
+          findit<span>.</span>
+        </h1>
+
+        <div className="loading-description">
+          <p>Good things find their way back.</p>
+          <ArrowUpRight size={19} />
         </div>
 
         <div className="loading-progress">
@@ -57,23 +75,15 @@ function LoadingIntro({ onComplete }) {
         </div>
 
         <div className="loading-footer">
-          <span>
-            {progress < 100
-              ? "INITIALIZING EXPERIENCE"
-              : "READY TO EXPLORE"}
-          </span>
-
+          <span>PREPARING YOUR EXPERIENCE</span>
           <span>{Math.floor(progress)}%</span>
         </div>
       </div>
 
-      <span className="loading-corner loading-corner-left">
-        FINDIT / 2026
-      </span>
-
-      <span className="loading-corner loading-corner-right">
-        LOST & FOUND PLATFORM
-      </span>
+      <div className="loading-bottom">
+        <span>FINDIT — EST. 2026</span>
+        <span>MADE TO RECONNECT</span>
+      </div>
     </div>
   );
 }

@@ -1,15 +1,28 @@
 
-import { Search, Menu, X } from "lucide-react";
 import { useState } from "react";
+import {
+  Search,
+  Menu,
+  X,
+  Sun,
+  Moon,
+} from "lucide-react";
 
-function Navbar({ onReportClick }) {
+function Navbar({
+  onReportClick,
+  theme = "light",
+  onToggleTheme,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   function focusSearch() {
     document.querySelector(".search-box input")?.focus();
+
     document.querySelector("#explore")?.scrollIntoView({
       behavior: "smooth",
     });
+
+    setMenuOpen(false);
   }
 
   function closeMenu() {
@@ -32,6 +45,7 @@ function Navbar({ onReportClick }) {
         <div className="nav-actions">
           <button
             className="nav-search"
+            type="button"
             aria-label="Search items"
             onClick={focusSearch}
           >
@@ -39,10 +53,33 @@ function Navbar({ onReportClick }) {
           </button>
 
           <button
+            className="nav-theme-toggle"
+            type="button"
+            onClick={onToggleTheme}
+            aria-label={
+              theme === "dark"
+                ? "Switch to light mode"
+                : "Switch to dark mode"
+            }
+            title={
+              theme === "dark"
+                ? "Light Mode"
+                : "Dark Mode"
+            }
+          >
+            {theme === "dark" ? (
+              <Sun size={19} />
+            ) : (
+              <Moon size={19} />
+            )}
+          </button>
+
+          <button
             className="nav-button"
+            type="button"
             onClick={() => {
               closeMenu();
-              onReportClick();
+              onReportClick?.();
             }}
           >
             Report Item
@@ -50,6 +87,7 @@ function Navbar({ onReportClick }) {
 
           <button
             className="mobile-menu"
+            type="button"
             aria-label="Toggle navigation"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((previous) => !previous)}
