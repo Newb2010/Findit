@@ -10,81 +10,20 @@ import LoadingIntro from "./components/LoadingIntro";
 import ReportModal from "./components/ReportModal";
 import ItemDetailModal from "./components/itemDetailModal";
 
+import {
+  getItems,
+  createItem,
+  updateItem,
+  deleteItem,
+} from "./services/itemService";
+
 import "./App.css";
 
-const STORAGE_KEY = "findit_items";
 const THEME_KEY = "findit_theme";
-
-const initialItems = [
-  {
-    id: 1,
-    name: "Black Backpack",
-    description: "A black backpack found near the school area.",
-    status: "found",
-    category: "Bags",
-    location: "School Area",
-    date: "30 Oct 2026",
-    image:
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600",
-    phone: "",
-  },
-  {
-    id: 2,
-    name: "Brown Wallet",
-    description: "A brown wallet reported missing.",
-    status: "lost",
-    category: "Accessories",
-    location: "Library",
-    date: "29 Oct 2026",
-    image:
-      "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600",
-    phone: "",
-  },
-  {
-    id: 3,
-    name: "Wireless Headphones",
-    description: "Wireless headphones found in a classroom.",
-    status: "found",
-    category: "Electronics",
-    location: "Classroom",
-    date: "28 Oct 2026",
-    image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600",
-    phone: "",
-  },
-  {
-    id: 4,
-    name: "Silver Watch",
-    description: "A silver watch reported missing.",
-    status: "lost",
-    category: "Accessories",
-    location: "Sports Hall",
-    date: "27 Oct 2026",
-    image:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600",
-    phone: "",
-  },
-];
-
-function getSavedItems() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (saved === null) return initialItems;
-
-    const parsed = JSON.parse(saved);
-
-    return Array.isArray(parsed) ? parsed : initialItems;
-  } catch (error) {
-    console.error("Failed to load Findit data:", error);
-    return initialItems;
-  }
-}
 
 function getSavedTheme() {
   try {
     const saved = localStorage.getItem(THEME_KEY);
-
     return saved === "dark" ? "dark" : "light";
   } catch {
     return "light";
@@ -97,22 +36,41 @@ function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
-  const [items, setItems] = useState(getSavedItems);
+  const [items, setItems] = useState([]);
   const [theme, setTheme] = useState(getSavedTheme);
+
+  // Ambil data barang dari Laravel
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadItems() {
+      try {
+        const data = await getItems();
+
+        if (isMounted) {
+          setItems(data);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil data Findit:", error);
+
+        if (isMounted) {
+          alert(
+            "Gagal mengambil data dari server. Pastikan Laravel sedang berjalan."
+          );
+        }
+      }
+    }
+
+    loadItems();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleLoadingComplete = useCallback(() => {
     setIsLoading(false);
   }, []);
-
-  // Simpan data barang
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch (error) {
-      console.error("Failed to save Findit data:", error);
-      alert("Penyimpanan browser penuh atau tidak tersedia.");
-    }
-  }, [items]);
 
   // Terapkan tema
   useEffect(() => {
@@ -180,39 +138,58 @@ function App() {
     };
   }, [isLoading]);
 
-  // Tambah barang
-  function handleAddItem(newItem) {
-    const itemWithId = {
-      ...newItem,
-      id: Date.now(),
-    };
+  // Tambah barang melalui Laravel
+  async function handleAddItem(newItem) {
+    try {
+      const createdItem = await createItem(newItem);
 
-    setItems((previousItems) => [
-      itemWithId,
-      ...previousItems,
-    ]);
+      setItems((previousItems) => [
+        createdItem,
+        ...previousItems,
+      ]);
 
-    setShowReport(false);
+      setShowReport(false);
+    } catch (error) {
+      console.error("Gagal menambahkan barang:", error);
+      alert(error.message || "Gagal menambahkan barang.");
+    }
   }
 
-  // Update barang
-  function handleUpdateItem(updatedItem) {
-    setItems((previousItems) =>
-      previousItems.map((item) =>
-        item.id === updatedItem.id ? updatedItem : item
-      )
-    );
+  // Update barang melalui Laravel
+  async function handleUpdateItem(updatedItem) {
+    try {
+      const savedItem = await updateItem(
+        updatedItem.id,
+        updatedItem
+      );
 
-    setEditingItem(null);
+      setItems((previousItems) =>
+        previousItems.map((item) =>
+          item.id === savedItem.id ? savedItem : item
+        )
+      );
+
+      setEditingItem(null);
+    } catch (error) {
+      console.error("Gagal memperbarui barang:", error);
+      alert(error.message || "Gagal memperbarui barang.");
+    }
   }
 
-  // Hapus barang
-  function handleDeleteItem(itemId) {
-    setItems((previousItems) =>
-      previousItems.filter((item) => item.id !== itemId)
-    );
+  // Hapus barang melalui Laravel
+  async function handleDeleteItem(itemId) {
+    try {
+      await deleteItem(itemId);
 
-    setSelectedItem(null);
+      setItems((previousItems) =>
+        previousItems.filter((item) => item.id !== itemId)
+      );
+
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("Gagal menghapus barang:", error);
+      alert(error.message || "Gagal menghapus barang.");
+    }
   }
 
   // Edit barang

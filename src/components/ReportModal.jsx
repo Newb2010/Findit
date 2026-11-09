@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { X, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { X, UploadCloud } from "lucide-react";
 
 const MAX_IMAGE_SIZE = 15 * 1024 * 1024;
 
@@ -18,6 +18,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [imageName, setImageName] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
     if (initialItem) {
@@ -25,10 +26,13 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
         ...initialForm,
         ...initialItem,
       });
+
       setImageName(initialItem.image ? "Existing image" : "");
+      setImagePreview(initialItem.image || "");
     } else {
       setFormData(initialForm);
       setImageName("");
+      setImagePreview("");
     }
 
     setErrors({});
@@ -64,6 +68,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
         ...previous,
         image: "Format foto harus JPG, PNG, atau WEBP.",
       }));
+
       event.target.value = "";
       return;
     }
@@ -73,34 +78,23 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
         ...previous,
         image: "Ukuran foto maksimal 15 MB.",
       }));
+
       event.target.value = "";
       return;
     }
 
-    const reader = new FileReader();
+    setFormData((previous) => ({
+      ...previous,
+      image: file,
+    }));
 
-    reader.onload = () => {
-      setFormData((previous) => ({
-        ...previous,
-        image: reader.result,
-      }));
+    setImagePreview(URL.createObjectURL(file));
+    setImageName(file.name);
 
-      setImageName(file.name);
-
-      setErrors((previous) => ({
-        ...previous,
-        image: "",
-      }));
-    };
-
-    reader.onerror = () => {
-      setErrors((previous) => ({
-        ...previous,
-        image: "Foto gagal dibaca. Silakan coba lagi.",
-      }));
-    };
-
-    reader.readAsDataURL(file);
+    setErrors((previous) => ({
+      ...previous,
+      image: "",
+    }));
   }
 
   function validateForm() {
@@ -125,15 +119,6 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
         "Gunakan nomor Indonesia, contoh: 081234567890.";
     }
 
-    if (
-      formData.image &&
-      typeof formData.image === "string" &&
-      formData.image.startsWith("data:image/") &&
-      !/^data:image\/(jpeg|png|webp);base64,/.test(formData.image)
-    ) {
-      newErrors.image = "Format foto tidak valid.";
-    }
-
     setErrors(newErrors);
 
     return Object.keys(newErrors).length === 0;
@@ -150,14 +135,37 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
       description: formData.description.trim(),
       location: formData.location.trim(),
       phone: formData.phone.trim(),
-      date: initialItem?.date || new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+      date:
+        initialItem?.date ||
+        new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
     };
 
     onSubmit(cleanedData);
+  }
+
+  function handleRemoveImage() {
+    setFormData((previous) => ({
+      ...previous,
+      image: "",
+    }));
+
+    setImagePreview("");
+    setImageName("");
+
+    setErrors((previous) => ({
+      ...previous,
+      image: "",
+    }));
+
+    const fileInput = document.getElementById("item-image");
+
+    if (fileInput) {
+      fileInput.value = "";
+    }
   }
 
   return (
@@ -199,6 +207,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
         <form onSubmit={handleSubmit} noValidate>
           <div className="report-form-group">
             <label htmlFor="item-name">Item name *</label>
+
             <input
               id="item-name"
               name="name"
@@ -206,6 +215,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
               onChange={handleChange}
               placeholder="Example: Black Backpack"
             />
+
             {errors.name && (
               <span className="report-error">{errors.name}</span>
             )}
@@ -213,6 +223,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
 
           <div className="report-form-group">
             <label htmlFor="item-description">Description *</label>
+
             <textarea
               id="item-description"
               name="description"
@@ -221,6 +232,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
               placeholder="Describe the item..."
               rows={4}
             />
+
             {errors.description && (
               <span className="report-error">
                 {errors.description}
@@ -231,6 +243,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
           <div className="report-form-row">
             <div className="report-form-group">
               <label htmlFor="item-status">Status *</label>
+
               <select
                 id="item-status"
                 name="status"
@@ -244,6 +257,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
 
             <div className="report-form-group">
               <label htmlFor="item-category">Category *</label>
+
               <select
                 id="item-category"
                 name="category"
@@ -262,6 +276,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
 
           <div className="report-form-group">
             <label htmlFor="item-location">Location *</label>
+
             <input
               id="item-location"
               name="location"
@@ -269,6 +284,7 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
               onChange={handleChange}
               placeholder="Where was it lost or found?"
             />
+
             {errors.location && (
               <span className="report-error">{errors.location}</span>
             )}
@@ -299,9 +315,11 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
 
             <label className="report-upload" htmlFor="item-image">
               <UploadCloud size={22} />
+
               <span>
                 {imageName || "Click to upload an image"}
               </span>
+
               <small>JPG, PNG, WEBP · Maximum 15 MB</small>
             </label>
 
@@ -313,22 +331,13 @@ function ReportModal({ onClose, onSubmit, initialItem = null }) {
               hidden
             />
 
-            {formData.image && (
+            {imagePreview && (
               <div className="report-image-preview">
-                <img src={formData.image} alt="Item preview" />
+                <img src={imagePreview} alt="Item preview" />
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setFormData((previous) => ({
-                      ...previous,
-                      image: "",
-                    }));
-                    setImageName("");
-                    setErrors((previous) => ({
-                      ...previous,
-                      image: "",
-                    }));
-                  }}
+                  onClick={handleRemoveImage}
                 >
                   <X size={15} /> Remove photo
                 </button>
